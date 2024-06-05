@@ -12,7 +12,9 @@ const checkPDFProperties = async (req, res) => {
 
   try {
     emitLog(io, 'info', `Starting to check PDF properties for domain: ${domain} with limit: ${limit}.`);
-    const pdfLinks = await searchPDFLinks(domain, limit);
+    const searchResults = await searchPDFLinks(domain, limit);
+    const pdfLinks = searchResults.pdfLinks;
+    const totalResults = searchResults.totalResults;
 
     const results = [];
     for (const link of pdfLinks) {
@@ -41,7 +43,10 @@ const checkPDFProperties = async (req, res) => {
         results.push({ pdfUrl, fileName, error: 'Failed to process PDF' });
       }
     }
-    res.json(results);
+    res.json({
+      totalResults,
+      documents: results
+    });
   } catch (error) {
     debug('Error in /api/check-pdf-properties: %O', error);
     emitLog(io, 'error', `Error in /api/check-pdf-properties: ${error.message}`);

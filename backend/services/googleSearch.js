@@ -5,7 +5,10 @@ const { mockPDFLinks } = require('../mockData');
 const searchPDFLinks = async (domain, limit) => {
   if (process.env.USE_MOCK_DATA === 'true') {
     debug('Using mock data for PDF links');
-    return mockPDFLinks.slice(0, limit);
+    return {
+      pdfLinks: mockPDFLinks.slice(0, limit),
+      totalResults: mockPDFLinks.length
+    };
   }
 
   try {
@@ -23,7 +26,12 @@ const searchPDFLinks = async (domain, limit) => {
     });
 
     const pdfLinks = response.data.items.map(item => item.link);
-    return pdfLinks;
+    const totalResults = response.data.searchInformation.totalResults;
+
+    return {
+      pdfLinks,
+      totalResults
+    };
   } catch (error) {
     debug('Error searching PDF links: %O', error);
     console.error('Error searching PDF links:', error.message);
