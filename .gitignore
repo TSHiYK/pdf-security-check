@@ -132,3 +132,5 @@ dist
 pdfservices-api-credentials.json
 backend/output/*
 !**/*/.gitkeep
+
+.DS_Store
