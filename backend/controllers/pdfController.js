@@ -6,6 +6,34 @@ const { searchPDFLinks, checkGoogleAPIStatus } = require('../services/googleSear
 const { emitLog } = require('../utils/logger');
 const debug = require('debug')('app:pdfController');
 
+const processPDF = async (pdfUrl, fileName, filePath, io) => {
+  try {
+    if (pdfUrl) {
+      emitLog(io, 'info', `Downloading PDF: ${fileName}`);
+      const pdfResponse = await axios.get(pdfUrl, { responseType: 'stream' });
+      const writer = fs.createWriteStream(filePath);
+      pdfResponse.data.pipe(writer);
+
+      await new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+      });
+
+      emitLog(io, 'info', `Downloaded PDF: ${fileName}, getting properties.`);
+    } else {
+      emitLog(io, 'info', `Processing uploaded PDF: ${fileName}`);
+    }
+
+    const pdfProperties = await getPDFProperties(filePath);
+    emitLog(io, 'info', `Processed PDF: ${fileName}`);
+    return { pdfUrl, fileName, pdfProperties };
+  } catch (error) {
+    debug('Error processing PDF at %s: %O', pdfUrl || fileName, error);
+    emitLog(io, 'error', `Error processing PDF at ${pdfUrl || fileName}: ${error.message}`);
+    return { pdfUrl, fileName, error: 'Failed to process PDF' };
+  }
+};
+
 const checkPDFProperties = async (req, res) => {
   const { domain, limit = 10 } = req.body;
   const io = req.app.get('io');
@@ -16,40 +44,39 @@ const checkPDFProperties = async (req, res) => {
     const pdfLinks = searchResults.pdfLinks;
     const totalResults = searchResults.totalResults;
 
-    const results = [];
-    for (const link of pdfLinks) {
-      const pdfUrl = link;
-      const fileName = path.basename(pdfUrl);
+    const results = await Promise.all(pdfLinks.map(async (link) => {
+      const fileName = path.basename(link);
       const filePath = path.join(__dirname, '../output', fileName);
+      return await processPDF(link, fileName, filePath, io);
+    }));
 
-      try {
-        emitLog(io, 'info', `Downloading PDF: ${fileName}`);
-        const pdfResponse = await axios.get(pdfUrl, { responseType: 'stream' });
-        const writer = fs.createWriteStream(filePath);
-        pdfResponse.data.pipe(writer);
-
-        await new Promise((resolve, reject) => {
-          writer.on('finish', resolve);
-          writer.on('error', reject);
-        });
-
-        emitLog(io, 'info', `Downloaded PDF: ${fileName}, getting properties.`);
-        const pdfProperties = await getPDFProperties(filePath);
-        results.push({ pdfUrl, fileName, pdfProperties });
-        emitLog(io, 'info', `Processed PDF: ${fileName}`);
-      } catch (error) {
-        debug('Error processing PDF at %s: %O', pdfUrl, error);
-        emitLog(io, 'error', `Error processing PDF at ${pdfUrl}: ${error.message}`);
-        results.push({ pdfUrl, fileName, error: 'Failed to process PDF' });
-      }
-    }
-    res.json({
-      totalResults,
-      documents: results
-    });
+    res.json({ totalResults, documents: results });
   } catch (error) {
     debug('Error in /api/check-pdf-properties: %O', error);
     emitLog(io, 'error', `Error in /api/check-pdf-properties: ${error.message}`);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+const uploadPDFProperties = async (req, res) => {
+  const io = req.app.get('io');
+  const files = req.files;
+
+  if (!files || files.length === 0) {
+    return res.status(400).json({ error: 'No files uploaded' });
+  }
+
+  try {
+    const results = await Promise.all(files.map(async (file) => {
+      const filePath = file.path;
+      const fileName = file.originalname;
+      return await processPDF(null, fileName, filePath, io);
+    }));
+
+    res.json(results);
+  } catch (error) {
+    debug('Error in /api/upload-pdf-properties: %O', error);
+    emitLog(io, 'error', `Error in /api/upload-pdf-properties: ${error.message}`);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
@@ -74,5 +101,6 @@ const checkAPIStatus = async (io) => {
 
 module.exports = {
   checkPDFProperties,
+  uploadPDFProperties,
   checkAPIStatus
 };
