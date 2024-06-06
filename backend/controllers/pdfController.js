@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { getPDFProperties, checkPDFServicesAPIStatus } = require('../services/pdfServices');
-const { searchPDFLinks, checkGoogleAPIStatus } = require('../services/googleSearch');
+const { searchPDFLinks, checkGoogleAPIStatus } = require('../services/googleSearchService');
 const { emitLog } = require('../utils/logger');
 const { mockPDFProperties } = require('../mockData');
 const debug = require('debug')('app:pdfController');
@@ -40,7 +40,7 @@ const checkPDFProperties = async (req, res) => {
   const io = req.app.get('io');
 
   try {
-     if (process.env.USE_MOCK_DATA === 'true') {
+    if (process.env.USE_MOCK_DATA === 'true') {
       debug('Using mock data for PDF properties');
       return res.json(mockPDFProperties);
     }

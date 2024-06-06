@@ -1,5 +1,5 @@
 const axios = require('axios');
-const debug = require('debug')('app:googleSearch');
+const debug = require('debug')('app:googleSearchService');
 const { mockPDFLinks } = require('../mockData');
 
 const searchPDFLinks = async (domain, limit) => {
