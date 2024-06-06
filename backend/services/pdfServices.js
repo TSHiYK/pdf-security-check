@@ -41,7 +41,6 @@ const getPDFProperties = async (filePath) => {
             return pdfProperties;
         } catch (error) {
             debug('Error in getPDFProperties with credentials %O: %O', credentialsData, error);
-            console.error('Error in getPDFProperties with credentials:', credentialsData, error);
             if (error.response && error.response.status === 429) {
                 continue; // Retry with the next credentials
             } else {
@@ -65,7 +64,6 @@ const checkPDFServicesAPIStatus = async () => {
             return "PDF Services API is available.";
         } catch (error) {
             debug('PDF Services API is unavailable with credentials %O: %O', credentialsData, error);
-            console.error('PDF Services API is unavailable with credentials:', credentialsData, error);
             if (error.response && error.response.status === 429) {
                 continue; // Retry with the next credentials
             } else {
