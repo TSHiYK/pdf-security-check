@@ -10,7 +10,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
     cors: {
-        origin: "http://localhost:4200",
+        origin: process.env.CLIENT_ORIGIN || "http://localhost:4200",
         methods: ["GET", "POST"]
     }
 });
@@ -21,6 +21,13 @@ app.use(cors());
 app.use(express.json());
 app.use('/api', routes);
 app.set('io', io);
+
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, 'dist')));
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    });
+}
 
 io.on('connection', (socket) => {
     console.log('Client connected');
