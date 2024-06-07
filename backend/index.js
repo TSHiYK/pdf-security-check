@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const socketIO = require('socket.io');
+const path = require('path');
 const routes = require('./routes');
 const { emitLog } = require('./utils/logger');
 
