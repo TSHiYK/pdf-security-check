@@ -130,8 +130,11 @@ dist
 .pnp.*
 
 pdfservices-api-credentials.json
+backend/browser/
 backend/output/*
-backend/uploads/*
+backend/tmp/*
 !**/*/.gitkeep
 
 .DS_Store
+.angular/
+.vscode/
