@@ -1,9 +1,9 @@
 const axios = require('axios');
 const debug = require('debug')('app:googleSearchService');
-const { mockPDFLinks } = require('../mockData');
 
-const searchPDFLinks = async (domain, limit) => {
+const searchPDFLinks = async (domain, limit, startDate, endDate) => {
   if (process.env.USE_MOCK_DATA === 'true') {
+    const { mockPDFLinks } = require('../mockData');
     debug('Using mock data for PDF links');
     return {
       pdfLinks: mockPDFLinks.slice(0, limit),
@@ -14,17 +14,23 @@ const searchPDFLinks = async (domain, limit) => {
   try {
     const apiKey = process.env.GOOGLE_API_KEY;
     const cx = process.env.GOOGLE_CX;
-    const query = `site:${domain} filetype:pdf`;
+    let query = `site:${domain} filetype:pdf`;
+    if (startDate && startDate !== '') {
+      query += ` after:${startDate}`;
+    }
 
-    const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
-      params: {
+    if (endDate && endDate !== '') {
+      query += ` before:${startDate}`;
+    }
+
+    let params = {
         key: apiKey,
         cx: cx,
         q: query,
         num: limit
-      }
-    });
+    }
 
+    const response = await axios.get('https://www.googleapis.com/customsearch/v1', { params });
     const pdfLinks = response.data.items.map(item => item.link);
     const totalResults = response.data.searchInformation.totalResults;
 

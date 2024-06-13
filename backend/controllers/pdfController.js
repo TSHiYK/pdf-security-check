@@ -27,6 +27,9 @@ const processPDF = async (pdfUrl, fileName, filePath, io) => {
 
     const pdfProperties = JSON.parse(await getPDFProperties(filePath));
     emitLog(io, 'info', `Processed PDF: ${fileName}`);
+
+    deleteFile(filePath);
+
     return { pdfUrl, fileName, pdfProperties };
   } catch (error) {
     debug('Error processing PDF at %s: %O', pdfUrl || fileName, error);
@@ -36,7 +39,7 @@ const processPDF = async (pdfUrl, fileName, filePath, io) => {
 };
 
 const checkPDFProperties = async (req, res) => {
-  const { domain, limit = 10 } = req.body;
+  const { domain, limit = 10, startDate, endDate } = req.body;
   const io = req.app.get('io');
 
   try {
@@ -46,13 +49,13 @@ const checkPDFProperties = async (req, res) => {
     }
 
     emitLog(io, 'info', `Starting to check PDF properties for domain: ${domain} with limit: ${limit}.`);
-    const searchResults = await searchPDFLinks(domain, limit);
+    const searchResults = await searchPDFLinks(domain, limit, startDate, endDate);
     const pdfLinks = searchResults.pdfLinks;
     const totalResults = searchResults.totalResults;
 
     const results = await Promise.all(pdfLinks.map(async (link) => {
       const fileName = path.basename(link);
-      const filePath = path.join(__dirname, '../output', fileName);
+      const filePath = path.join(__dirname, '../tmp', fileName);
       return await processPDF(link, fileName, filePath, io);
     }));
 
@@ -76,7 +79,11 @@ const uploadPDFProperties = async (req, res) => {
     const results = await Promise.all(files.map(async (file) => {
       const filePath = file.path;
       const fileName = file.originalname;
-      return await processPDF(null, fileName, filePath, io);
+      const result = await processPDF(null, fileName, filePath, io);
+      
+      deleteFile(filePath);
+      
+      return result;
     }));
 
     res.json(results);
@@ -85,6 +92,16 @@ const uploadPDFProperties = async (req, res) => {
     emitLog(io, 'error', `Error in /api/upload-pdf-properties: ${error.message}`);
     res.status(500).json({ error: 'Internal Server Error' });
   }
+};
+
+const deleteFile = (filePath) => {
+  fs.unlink(filePath, (err) => {
+    if (err) {
+      console.error(`Error deleting file: ${filePath}`, err);
+    } else {
+      console.log(`Successfully deleted file: ${filePath}`);
+    }
+  });
 };
 
 const checkAPIStatus = async (io) => {

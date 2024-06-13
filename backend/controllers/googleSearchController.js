@@ -3,12 +3,12 @@ const { emitLog } = require('../utils/logger');
 const debug = require('debug')('app:googleSearchController');
 
 const handleSearchPDFLinks = async (req, res) => {
-  const { domain, limit = 10 } = req.body;
+  const { domain, limit = 10, startDate, endDate } = req.body;
   const io = req.app.get('io');
 
   try {
     emitLog(io, 'info', `Searching for PDF links on domain: ${domain} with limit: ${limit}.`);
-    const searchResults = await searchPDFLinks(domain, limit);
+    const searchResults = await searchPDFLinks(domain, limit, startDate, endDate);
     res.json(searchResults);
   } catch (error) {
     debug('Error in handleSearchPDFLinks: %O', error);
