@@ -4,7 +4,7 @@
     "debug": "DEBUG=app:* USE_MOCK_DATA=true node index.js"
   },
   "dependencies": {
-    "@adobe/pdfservices-node-sdk": "^4.0.0",
+    "@adobe/pdfservices-node-sdk": "^4.0.1",
     "axios": "^1.7.2",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
