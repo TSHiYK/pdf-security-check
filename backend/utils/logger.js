@@ -5,7 +5,7 @@ let io;
 const initLogger = (server) => {
     io = socketIO(server, {
         cors: {
-            origin: "http://localhost:4200", // フロントエンドのURL
+            origin: process.env.NODE_ENV === "production" ? process.env.CLIENT_ORIGIN : "http://localhost:4200", // フロントエンドのURL
             methods: ["GET", "POST"]
         }
     });
