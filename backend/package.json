@@ -1,6 +1,7 @@
 {
   "scripts": {
     "start": "node index.js",
+    "test": "jest",
     "debug": "DEBUG=app:* USE_MOCK_DATA=true node index.js"
   },
   "dependencies": {
